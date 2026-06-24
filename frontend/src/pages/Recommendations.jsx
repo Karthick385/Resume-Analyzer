@@ -19,7 +19,7 @@ function Recommendations() {
 
     sessionStorage.removeItem("viewJobs");
     fetchRecommendations();
-  }, []);
+  }, [navigate]);
 
   const fetchRecommendations = async () => {
     setLoading(true);
