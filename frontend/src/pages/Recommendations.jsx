@@ -1,4 +1,4 @@
-import { useEffect, useState,useCallback } from "react";
+import { useEffect, useState, useCallback } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 
@@ -7,56 +7,58 @@ function Recommendations() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [animated, setAnimated] = useState(false);
+
   const navigate = useNavigate();
 
- useEffect(() => {
-  const canView = sessionStorage.getItem("viewJobs");
+  const fetchRecommendations = useCallback(async () => {
+    setLoading(true);
+    setError("");
 
-  if (!canView) {
-    navigate("/dashboard");
-    return;
-  }
+    try {
+      const token = localStorage.getItem("token");
 
-  sessionStorage.removeItem("viewJobs");
-  fetchRecommendations();
-}, [navigate, fetchRecommendations]);
+      if (!token) {
+        navigate("/login");
+        return;
+      }
 
- const fetchRecommendations = useCallback(async () => {
-  setLoading(true);
-  setError("");
+      const res = await axios.get(
+        "https://resume-analyzer-api-2yf7.onrender.com/api/match",
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
 
-  try {
-    const token = localStorage.getItem("token");
+      setJobs(res.data);
+      setTimeout(() => setAnimated(true), 100);
+    } catch (error) {
+      if (error.response?.status === 401) {
+        navigate("/login");
+      } else if (error.response?.status === 404) {
+        setError("No resume found. Please upload your resume first.");
+      } else {
+        setError("Failed to load recommendations. Try again.");
+      }
+    } finally {
+      setLoading(false);
+    }
+  }, [navigate]);
 
-    if (!token) {
-      navigate("/login");
+  useEffect(() => {
+    const canView = sessionStorage.getItem("viewJobs");
+
+    if (!canView) {
+      navigate("/dashboard");
       return;
     }
 
-    const res = await axios.get(
-      "https://resume-analyzer-api-2yf7.onrender.com/api/match",
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      }
-    );
+    sessionStorage.removeItem("viewJobs");
+    fetchRecommendations();
+  }, [navigate, fetchRecommendations]);
 
-    setJobs(res.data);
-    setTimeout(() => setAnimated(true), 100);
-  } catch (error) {
-    if (error.response?.status === 401) {
-      navigate("/login");
-    } else if (error.response?.status === 404) {
-      setError("No resume found. Please upload your resume first.");
-    } else {
-      setError("Failed to load recommendations. Try again.");
-    }
-  } finally {
-    setLoading(false);
-  }
-}, [navigate]);
-
+  
   const getScoreColor = (score) => {
     if (score >= 75) return { color: "#16a34a", bg: "#f0fdf4", border: "#bbf7d0" };
     if (score >= 50) return { color: "#d97706", bg: "#fffbeb", border: "#fde68a" };
