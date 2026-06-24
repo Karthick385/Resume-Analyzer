@@ -1,0 +1,11 @@
+import axios from "axios";
+
+const API_URL = "https://resume-analyzer-api-2yf7.onrender.com";
+
+export const registerUser = (userData) => {
+  return axios.post(`${API_URL}/register`, userData);
+};
+
+export const loginUser = (userData) => {
+  return axios.post(`${API_URL}/login`, userData);
+};
