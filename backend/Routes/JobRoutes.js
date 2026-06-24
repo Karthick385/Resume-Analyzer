@@ -7,7 +7,7 @@ const {
   getJobs,
   deleteJob,
 } = require(
-  "../controllers/JobController"
+  "../Controllers/JobController"
 );
 
 router.post("/", createJob);
