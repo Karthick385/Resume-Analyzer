@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState,useCallback } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 
@@ -9,48 +9,53 @@ function Recommendations() {
   const [animated, setAnimated] = useState(false);
   const navigate = useNavigate();
 
-  useEffect(() => {
-    const canView = sessionStorage.getItem("viewJobs");
+ useEffect(() => {
+  const canView = sessionStorage.getItem("viewJobs");
 
-    if (!canView) {
-      navigate("/dashboard");
+  if (!canView) {
+    navigate("/dashboard");
+    return;
+  }
+
+  sessionStorage.removeItem("viewJobs");
+  fetchRecommendations();
+}, [navigate, fetchRecommendations]);
+
+ const fetchRecommendations = useCallback(async () => {
+  setLoading(true);
+  setError("");
+
+  try {
+    const token = localStorage.getItem("token");
+
+    if (!token) {
+      navigate("/login");
       return;
     }
 
-    sessionStorage.removeItem("viewJobs");
-    fetchRecommendations();
-  }, [navigate]);
-
-  const fetchRecommendations = async () => {
-    setLoading(true);
-    setError("");
-
-    try {
-      const token = localStorage.getItem("token");
-
-      if (!token) {
-        navigate("/login");
-        return;
+    const res = await axios.get(
+      "https://resume-analyzer-api-2yf7.onrender.com/api/match",
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
       }
+    );
 
-      const res = await axios.get("https://resume-analyzer-api-2yf7.onrender.com/api/match", {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-
-      setJobs(res.data);
-      setTimeout(() => setAnimated(true), 100);
-    } catch (error) {
-      if (error.response?.status === 401) {
-        navigate("/login");
-      } else if (error.response?.status === 404) {
-        setError("No resume found. Please upload your resume first.");
-      } else {
-        setError("Failed to load recommendations. Try again.");
-      }
-    } finally {
-      setLoading(false);
+    setJobs(res.data);
+    setTimeout(() => setAnimated(true), 100);
+  } catch (error) {
+    if (error.response?.status === 401) {
+      navigate("/login");
+    } else if (error.response?.status === 404) {
+      setError("No resume found. Please upload your resume first.");
+    } else {
+      setError("Failed to load recommendations. Try again.");
     }
-  };
+  } finally {
+    setLoading(false);
+  }
+}, [navigate]);
 
   const getScoreColor = (score) => {
     if (score >= 75) return { color: "#16a34a", bg: "#f0fdf4", border: "#bbf7d0" };
